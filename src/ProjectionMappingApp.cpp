@@ -1,9 +1,11 @@
 #include "cinder/app/AppBasic.h"
 #include "cinder/gl/gl.h"
 #include "cinder/gl/Vbo.h"
+#include "cinder/gl/GlslProg.h"
 #include "cinder/Camera.h"
 
 #include "VKinect.h"
+#include "Resources.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -13,6 +15,8 @@ using namespace V;
 
 class ProjectionMappingApp : public AppBasic {
 public:
+    ProjectionMappingApp();
+    
     void prepareSettings( Settings *settings );
     void setup();
     void keyDown(KeyEvent ev);
@@ -26,13 +30,20 @@ private:
     Kinect kinect;
     
     ci::gl::VboMesh vbo;
+    ci::gl::GlslProg shader;
     
     ci::CameraPersp camera;
-    Vec3f cameraPosition;
+    ci::Vec3f cameraPosition;
     static const Vec3f DEFAULT_CAMERA_POSITION;
-    Vec2i dragStart;
+    ci::Vec2i dragStart;
 };
-const Vec3f ProjectionMappingApp::DEFAULT_CAMERA_POSITION = Vec3f(0.0f, 0.0f, 750.f);
+const Vec3f ProjectionMappingApp::DEFAULT_CAMERA_POSITION = Vec3f(0.0f, 0.0f, 100.f);
+
+
+ProjectionMappingApp::ProjectionMappingApp ()
+{
+    
+}
 
 void ProjectionMappingApp::prepareSettings( Settings *settings )
 {
@@ -46,11 +57,12 @@ void ProjectionMappingApp::setup()
 {
     
     try {
-        kinect.setup();
+        kinect.setup(Vec2i(640, 480), NODE_TYPE_IMAGE | NODE_TYPE_DEPTH);
     } catch ( int e ) {
         console() << "No kinect. Exit sadface." << endl;
         quit();
     }
+    kinect.getDevice()->setAlignWithDepthGenerator();
     
     camera = CameraPersp(getWindowWidth(), getWindowHeight(), 60.f);
     cameraPosition = DEFAULT_CAMERA_POSITION;
@@ -85,6 +97,23 @@ void ProjectionMappingApp::setup()
     vbo.bufferIndices(indices);
     vbo.bufferColorsRGB(colors);
     vbo.bufferNormals(normals);
+    
+    
+    
+    
+    try {
+		shader = gl::GlslProg(loadResource(RES_SHADER_VERT), loadResource(RES_SHADER_FRAG));
+	}
+	catch( gl::GlslProgCompileExc &exc ) {
+		std::cout << "shader compile error: " << RES_SHADER_VERT << " / " << RES_SHADER_FRAG << std::endl;
+		std::cout << exc.what();
+        quit();
+	}
+	catch( ... ) {
+		std::cout << "Unable to load shader: " << RES_SHADER_VERT << " / " << RES_SHADER_FRAG << std::endl;
+        quit();
+	}
+
 }
 
 void ProjectionMappingApp::mouseDown( MouseEvent event )
@@ -95,34 +124,40 @@ void ProjectionMappingApp::update()
 {
     kinect.update();
     camera.lookAt(cameraPosition, Vec3f::zero(), Vec3f::yAxis());
-
     
-    Vec2i kSize = kinect.getDepthSize();
-    vector< Vec3f > positions;
-    positions.reserve(kSize.x * kSize.y);
-    
-    Surface8u surface(kinect.getDepthImage());
-
-    
-    gl::VboMesh::VertexIter it = vbo.mapVertexBuffer();
-	for( int x = 0; x < kSize.x; ++x ) {
-		for( int y = 0; y < kSize.y; ++y ) {
-            ColorAT< uint8_t > color = surface.getPixel(Vec2i(x, y));
-            it.setPosition(Vec3f(x - kSize.x / 2.f, -y + kSize.y / 2.f, -color.r));
-            ++it;
+    if ( kinect.getDevice()->isDepthDataNew() ) {
+        Vec2i kSize = kinect.getDepthSize();
+        vector< Vec3f > positions;
+        positions.reserve(kSize.x * kSize.y);
+        
+        double start = getElapsedSeconds();
+        XnPoint3D *pointCloud = kinect.getDepthMapRealWorld();
+        
+        start = getElapsedSeconds();
+        gl::VboMesh::VertexIter it = vbo.mapVertexBuffer();
+        for( int x = 0; x < kSize.x; ++x ) {
+            for( int y = 0; y < kSize.y; ++y ) {
+                XnPoint3D *point = pointCloud + (y + x * kSize.x);
+                it.setPosition(point->X / 10.f, point->Y / 10.f, -(point->Z / 10.f));
+                
+                ++it;
+            }
         }
-    }
+    }    
 }
 
 void ProjectionMappingApp::draw()
 {
-	// clear out the window with black
     gl::setMatrices(camera);
-	gl::clear( Color( 0, 0, 0 ) );
-    gl::color(1, 1, 1);
-    glPointSize(3.f);
-    gl::draw(vbo);
-
+    shader.bind();
+    {
+        kinect.getColorTexture()->bind();
+        gl::clear( Color( 0, 0, 0 ) );
+        gl::color(1, 1, 1);
+        glPointSize(3.f);
+        gl::draw(vbo);
+    }
+    shader.unbind();
 }
 
 void ProjectionMappingApp::keyDown(KeyEvent ev)

@@ -15,6 +15,10 @@
 		00B784B60FF439BC000DE1D7 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
 		00BAE65A0E7ED9C10018A608 /* ProjectionMappingApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BAE6590E7ED9C10018A608 /* ProjectionMappingApp.cpp */; };
 		00CCAF15116A9FEE008396D5 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 00CCAF14116A9FEE008396D5 /* CinderApp.icns */; };
+		3C42EFBB16A39D9E002AFD58 /* shader.vert in Sources */ = {isa = PBXBuildFile; fileRef = 3C42EFBA16A39D9E002AFD58 /* shader.vert */; };
+		3C42EFBD16A39DAE002AFD58 /* shader.frag in Sources */ = {isa = PBXBuildFile; fileRef = 3C42EFBC16A39DAE002AFD58 /* shader.frag */; };
+		3C42EFBE16A39EFA002AFD58 /* shader.vert in Resources */ = {isa = PBXBuildFile; fileRef = 3C42EFBA16A39D9E002AFD58 /* shader.vert */; };
+		3C42EFBF16A39EFA002AFD58 /* shader.frag in Resources */ = {isa = PBXBuildFile; fileRef = 3C42EFBC16A39DAE002AFD58 /* shader.frag */; };
 		3C71827C169A2239006AD0A4 /* VOpenNIDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C718270169A2239006AD0A4 /* VOpenNIDevice.cpp */; };
 		3C71827D169A2239006AD0A4 /* VOpenNIDeviceManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C718272169A2239006AD0A4 /* VOpenNIDeviceManager.cpp */; };
 		3C71827E169A2239006AD0A4 /* VOpenNINetwork.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C718275169A2239006AD0A4 /* VOpenNINetwork.cpp */; };
@@ -41,6 +45,9 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* ProjectionMapping_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectionMapping_Prefix.pch; sourceTree = "<group>"; };
+		3C42EFB816A39D62002AFD58 /* Resources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
+		3C42EFBA16A39D9E002AFD58 /* shader.vert */ = {isa = PBXFileReference; explicitFileType = sourcecode.glsl; fileEncoding = 4; name = shader.vert; path = ../resources/shader.vert; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.glsl; };
+		3C42EFBC16A39DAE002AFD58 /* shader.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = shader.frag; path = ../resources/shader.frag; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.glsl; };
 		3C71826D169A2239006AD0A4 /* SkeletonPoseDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SkeletonPoseDetector.h; sourceTree = "<group>"; };
 		3C71826E169A2239006AD0A4 /* VOpenNIBone.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VOpenNIBone.h; sourceTree = "<group>"; };
 		3C71826F169A2239006AD0A4 /* VOpenNICommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VOpenNICommon.h; sourceTree = "<group>"; };
@@ -145,6 +152,7 @@
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				3C42EFB816A39D62002AFD58 /* Resources.h */,
 				32CA4F630368D1EE00C91783 /* ProjectionMapping_Prefix.pch */,
 			);
 			name = Headers;
@@ -155,6 +163,8 @@
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
 				00CCAF14116A9FEE008396D5 /* CinderApp.icns */,
+				3C42EFBA16A39D9E002AFD58 /* shader.vert */,
+				3C42EFBC16A39DAE002AFD58 /* shader.frag */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -256,6 +266,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C42EFBE16A39EFA002AFD58 /* shader.vert in Resources */,
+				3C42EFBF16A39EFA002AFD58 /* shader.frag in Resources */,
 				00CCAF15116A9FEE008396D5 /* CinderApp.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -274,6 +286,8 @@
 				3C71827F169A2239006AD0A4 /* VOpenNIRecorder.cpp in Sources */,
 				3C718280169A2239006AD0A4 /* VOpenNIUser.cpp in Sources */,
 				3C92D336169A5B2A00748453 /* VKinect.cpp in Sources */,
+				3C42EFBB16A39D9E002AFD58 /* shader.vert in Sources */,
+				3C42EFBD16A39DAE002AFD58 /* shader.frag in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
