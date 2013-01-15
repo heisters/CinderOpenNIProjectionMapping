@@ -74,14 +74,17 @@ void ProjectionMappingApp::setup()
     layout.setDynamicPositions();
     layout.setStaticNormals();
     layout.setStaticColorsRGB();
+    layout.setStaticTexCoords2d();
     
     Vec2i kSize = kinect.getDepthSize();
     vector< uint32_t > indices;
     indices.reserve(kSize.x * kSize.y);
     vector< Vec3f > normals;
-    normals.reserve(kSize.x * kSize.y);
+    normals.reserve(indices.capacity());
     vector< Color > colors;
-    colors.reserve(kSize.x * kSize.y);
+    colors.reserve(indices.capacity());
+    vector< Vec2f > texCoords;
+    texCoords.reserve(indices.capacity());
     
     vbo = VboMesh(kSize.x * kSize.y, indices.capacity(), layout, GL_POINTS);
     
@@ -91,14 +94,14 @@ void ProjectionMappingApp::setup()
             Color color(1, 1, 1);
             colors.push_back(color);
             normals.push_back(Vec3f(0, 0, 1));
+            texCoords.push_back(Vec2f((float)x / (float)kSize.x, (float)y / (float)kSize.y));
         }
     }
     
     vbo.bufferIndices(indices);
     vbo.bufferColorsRGB(colors);
     vbo.bufferNormals(normals);
-    
-    
+    vbo.bufferTexCoords2d(0, texCoords);
     
     
     try {
@@ -138,7 +141,7 @@ void ProjectionMappingApp::update()
         for( int x = 0; x < kSize.x; ++x ) {
             for( int y = 0; y < kSize.y; ++y ) {
                 XnPoint3D *point = pointCloud + (y + x * kSize.x);
-                it.setPosition(point->X / 10.f, point->Y / 10.f, -(point->Z / 10.f));
+                it.setPosition(point->X / 5.f, point->Y / 5.f, -(point->Z / 5.f));
                 
                 ++it;
             }
@@ -148,16 +151,21 @@ void ProjectionMappingApp::update()
 
 void ProjectionMappingApp::draw()
 {
+    gl::pushMatrices();
     gl::setMatrices(camera);
-    shader.bind();
     {
+        shader.bind();
         kinect.getColorTexture()->bind();
-        gl::clear( Color( 0, 0, 0 ) );
-        gl::color(1, 1, 1);
-        glPointSize(3.f);
-        gl::draw(vbo);
+        {
+            gl::clear( Color( 0, 0, 0 ) );
+            gl::color(1, 1, 1);
+            glPointSize(3.f);
+            gl::draw(vbo);
+        }
+        kinect.getColorTexture()->unbind();
+        shader.unbind();
     }
-    shader.unbind();
+    gl::popMatrices();
 }
 
 void ProjectionMappingApp::keyDown(KeyEvent ev)
