@@ -54,8 +54,7 @@ void ProjectionMappingApp::prepareSettings( Settings *settings )
 }
 
 void ProjectionMappingApp::setup()
-{
-    
+{  
     try {
         kinect.setup(Vec2i(640, 480), NODE_TYPE_IMAGE | NODE_TYPE_DEPTH);
     } catch ( int e ) {
@@ -91,8 +90,7 @@ void ProjectionMappingApp::setup()
     for ( int y = 0; y < kSize.y; ++y ) {
         for ( int x = 0; x < kSize.x; ++x ) {
             indices.push_back(x + y * kSize.y);
-            Color color(1, 1, 1);
-            colors.push_back(color);
+            colors.push_back(Color(1, 1, 1));
             normals.push_back(Vec3f(0, 0, 1));
             texCoords.push_back(Vec2f((float)x / (float)kSize.x, (float)y / (float)kSize.y));
         }
@@ -137,16 +135,11 @@ void ProjectionMappingApp::update()
         XnPoint3D *pointCloud = kinect.getDepthMapRealWorld();
         
         start = getElapsedSeconds();
-        gl::VboMesh::VertexIter it = vbo.mapVertexBuffer();
-        for( int x = 0; x < kSize.x; ++x ) {
-            for( int y = 0; y < kSize.y; ++y ) {
-                XnPoint3D *point = pointCloud + (y + x * kSize.x);
-                it.setPosition(point->X / 5.f, point->Y / 5.f, -(point->Z / 5.f));
-                
-                ++it;
-            }
+        for ( gl::VboMesh::VertexIter it = vbo.mapVertexBuffer(); it.getIndex() < vbo.getNumIndices(); ++it ) {
+            XnPoint3D *point = pointCloud + it.getIndex();
+            it.setPosition(point->X * 0.5f, point->Y * 0.5f, -(point->Z * 0.5));
         }
-    }    
+    }
 }
 
 void ProjectionMappingApp::draw()
@@ -159,7 +152,7 @@ void ProjectionMappingApp::draw()
         {
             gl::clear( Color( 0, 0, 0 ) );
             gl::color(1, 1, 1);
-            glPointSize(3.f);
+            glPointSize(1.f);
             gl::draw(vbo);
         }
         kinect.getColorTexture()->unbind();
