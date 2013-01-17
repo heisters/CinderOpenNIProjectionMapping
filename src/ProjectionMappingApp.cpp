@@ -3,6 +3,7 @@
 #include "cinder/gl/Vbo.h"
 #include "cinder/gl/GlslProg.h"
 #include "cinder/Camera.h"
+#include "cinder/params/Params.h"
 
 #include "VKinect.h"
 #include "Resources.h"
@@ -20,7 +21,7 @@ public:
     void prepareSettings( Settings *settings );
     void setup();
     void keyDown(KeyEvent ev);
-    void mouseDown( MouseEvent event );
+    void mouseDown( MouseEvent ev );
     void mouseDrag(MouseEvent ev);
     void mouseUp(MouseEvent ev);
     void update();
@@ -33,11 +34,30 @@ private:
     ci::gl::GlslProg shader;
     
     ci::CameraPersp camera;
-    ci::Vec3f cameraPosition;
-    static const Vec3f DEFAULT_CAMERA_POSITION;
-    ci::Vec2i dragStart;
+    
+    
+    class UI {
+    public:
+        UI() :
+        cameraRotation(Quatf()),
+        cameraDistance(100.f)
+        { }
+        
+        void setup ()
+        {
+            ui = params::InterfaceGl("APP", Vec2i(400, 200));
+            ui.addParam("camera rotation", &cameraRotation);
+            ui.addParam("camera distance", &cameraDistance);
+        }
+        
+        Quatf cameraRotation;
+        float cameraDistance;
+        params::InterfaceGl ui;
+        ci::Vec3f mouseDragStart, cameraDragStart;
+        float cameraDistanceDragStart;
+    };
+    UI ui;
 };
-const Vec3f ProjectionMappingApp::DEFAULT_CAMERA_POSITION = Vec3f(0.0f, 0.0f, 100.f);
 
 
 ProjectionMappingApp::ProjectionMappingApp ()
@@ -54,7 +74,10 @@ void ProjectionMappingApp::prepareSettings( Settings *settings )
 }
 
 void ProjectionMappingApp::setup()
-{  
+{
+    ui.setup();
+    
+    
     try {
         kinect.setup(Vec2i(640, 480), NODE_TYPE_IMAGE | NODE_TYPE_DEPTH);
     } catch ( int e ) {
@@ -64,8 +87,6 @@ void ProjectionMappingApp::setup()
     kinect.getDevice()->setAlignWithDepthGenerator();
     
     camera = CameraPersp(getWindowWidth(), getWindowHeight(), 60.f);
-    cameraPosition = DEFAULT_CAMERA_POSITION;
-    dragStart = Vec2i::zero();
 
     
     VboMesh::Layout layout;
@@ -114,18 +135,21 @@ void ProjectionMappingApp::setup()
 		std::cout << "Unable to load shader: " << RES_SHADER_VERT << " / " << RES_SHADER_FRAG << std::endl;
         quit();
 	}
-
-}
-
-void ProjectionMappingApp::mouseDown( MouseEvent event )
-{
 }
 
 void ProjectionMappingApp::update()
 {
-    kinect.update();
-    camera.lookAt(cameraPosition, Vec3f::zero(), Vec3f::yAxis());
+    float camDist = ui.cameraDistance;
+    Quatf quat = ui.cameraRotation;
+    quat.w *= -1.0f; // reverse rotation
+    Vec3f camTarget = Vec3f::zero();
+    Vec3f camOffset = quat * Vec3f(0, 0, camDist);
+    Vec3f camEye    = camTarget + camOffset;
+    Vec3f camUp     = quat * Vec3f::yAxis();
+    camera.lookAt(camEye, camTarget, camUp);
+
     
+    kinect.update();
     if ( kinect.getDevice()->isDepthDataNew() ) {
         Vec2i kSize = kinect.getDepthSize();
         vector< Vec3f > positions;
@@ -159,25 +183,41 @@ void ProjectionMappingApp::draw()
         shader.unbind();
     }
     gl::popMatrices();
+    
+    ui.ui.draw();
 }
 
 void ProjectionMappingApp::keyDown(KeyEvent ev)
 {
     if ( ev.getCode() == KeyEvent::KEY_SPACE ) {
-        cameraPosition = DEFAULT_CAMERA_POSITION;
+        ui.cameraRotation = Quatf();
+        ui.cameraDistance = 100.f;
     }
 }
 
 void ProjectionMappingApp::mouseDrag(MouseEvent ev)
 {
-    if ( dragStart == Vec2i::zero() ) dragStart = ev.getPos() - cameraPosition.xy();
-    cameraPosition.x = ev.getX() - dragStart.x;
-    cameraPosition.y = ev.getY() - dragStart.y;
+    if ( ev.isLeft() ) {
+        ui.cameraRotation.v = Vec3f((ev.getY() - ui.mouseDragStart.y) / getWindowHeight(),
+                                    (ev.getX() - ui.mouseDragStart.x) / getWindowWidth(),
+                                    0) + ui.cameraDragStart;
+        ui.cameraRotation.normalize();
+    } else if ( ev.isRight() ) {
+        ui.cameraDistance = ev.getY() - ui.mouseDragStart.z + ui.cameraDistanceDragStart;
+//        cameraPosition.x = ev.getX() - mouseDragStart.x;
+//        cameraPosition.z = ev.getY() - mouseDragStart.z;
+    }
+}
+
+void ProjectionMappingApp::mouseDown(MouseEvent ev)
+{
+    ui.mouseDragStart = (Vec3f)ev.getPos().xyy();
+    ui.cameraDragStart = ui.cameraRotation.v;
+    ui.cameraDistanceDragStart = ui.cameraDistance;
 }
 
 void ProjectionMappingApp::mouseUp(MouseEvent ev)
 {
-    if ( dragStart != Vec2i::zero() ) dragStart = Vec2i::zero();
 }
 
 
