@@ -6,6 +6,7 @@
 #include "cinder/params/Params.h"
 
 #include "VKinect.h"
+#include "VFakeKinect.h"
 #include "Resources.h"
 
 using namespace ci;
@@ -28,7 +29,7 @@ public:
     void draw();
     
 private:
-    Kinect kinect;
+    FakeKinect kinect;
     
     ci::gl::VboMesh vbo;
     ci::gl::GlslProg shader;

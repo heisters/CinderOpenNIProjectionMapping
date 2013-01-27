@@ -15,6 +15,7 @@
 		00B784B60FF439BC000DE1D7 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
 		00BAE65A0E7ED9C10018A608 /* ProjectionMappingApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00BAE6590E7ED9C10018A608 /* ProjectionMappingApp.cpp */; };
 		00CCAF15116A9FEE008396D5 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 00CCAF14116A9FEE008396D5 /* CinderApp.icns */; };
+		3C42688916B321960069EF3E /* VFakeKinect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C42688716B321960069EF3E /* VFakeKinect.cpp */; };
 		3C42EFBB16A39D9E002AFD58 /* shader.vert in Sources */ = {isa = PBXBuildFile; fileRef = 3C42EFBA16A39D9E002AFD58 /* shader.vert */; };
 		3C42EFBD16A39DAE002AFD58 /* shader.frag in Sources */ = {isa = PBXBuildFile; fileRef = 3C42EFBC16A39DAE002AFD58 /* shader.frag */; };
 		3C42EFBE16A39EFA002AFD58 /* shader.vert in Resources */ = {isa = PBXBuildFile; fileRef = 3C42EFBA16A39D9E002AFD58 /* shader.vert */; };
@@ -45,6 +46,8 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* ProjectionMapping_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectionMapping_Prefix.pch; sourceTree = "<group>"; };
+		3C42688716B321960069EF3E /* VFakeKinect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VFakeKinect.cpp; sourceTree = "<group>"; };
+		3C42688816B321960069EF3E /* VFakeKinect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VFakeKinect.h; sourceTree = "<group>"; };
 		3C42EFB816A39D62002AFD58 /* Resources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
 		3C42EFBA16A39D9E002AFD58 /* shader.vert */ = {isa = PBXFileReference; explicitFileType = sourcecode.glsl; fileEncoding = 4; name = shader.vert; path = ../resources/shader.vert; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.glsl; };
 		3C42EFBC16A39DAE002AFD58 /* shader.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = shader.frag; path = ../resources/shader.frag; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.glsl; };
@@ -214,6 +217,8 @@
 				3C718279169A2239006AD0A4 /* VOpenNISurface.h */,
 				3C71827A169A2239006AD0A4 /* VOpenNIUser.cpp */,
 				3C71827B169A2239006AD0A4 /* VOpenNIUser.h */,
+				3C42688716B321960069EF3E /* VFakeKinect.cpp */,
+				3C42688816B321960069EF3E /* VFakeKinect.h */,
 			);
 			name = src;
 			path = ../../../sw/src/Cinder/blocks/BlockOpenNI/src;
@@ -288,6 +293,7 @@
 				3C92D336169A5B2A00748453 /* VKinect.cpp in Sources */,
 				3C42EFBB16A39D9E002AFD58 /* shader.vert in Sources */,
 				3C42EFBD16A39DAE002AFD58 /* shader.frag in Sources */,
+				3C42688916B321960069EF3E /* VFakeKinect.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
