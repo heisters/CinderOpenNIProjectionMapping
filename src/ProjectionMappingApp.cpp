@@ -4,6 +4,10 @@
 #include "cinder/gl/GlslProg.h"
 #include "cinder/Camera.h"
 #include "cinder/params/Params.h"
+#include "cinder/CinderMath.h"
+
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 #include "VKinect.h"
 #include "VFakeKinect.h"
@@ -40,22 +44,22 @@ private:
     class UI {
     public:
         UI() :
-        cameraRotation(Quatf()),
+        cameraRotation(ci::Vec2f::zero()),
         cameraDistance(100.f)
         { }
         
         void setup ()
         {
             ui = params::InterfaceGl("APP", Vec2i(400, 200));
-            ui.addParam("camera rotation", &cameraRotation);
+            ui.addParam("camera rotation X", &cameraRotation.x);
+            ui.addParam("camera rotation Y", &cameraRotation.y);
             ui.addParam("camera distance", &cameraDistance);
         }
         
-        Quatf cameraRotation;
-        float cameraDistance;
         params::InterfaceGl ui;
-        ci::Vec3f mouseDragStart, cameraDragStart;
-        float cameraDistanceDragStart;
+        
+        ci::Vec2f cameraRotation, cameraRotationDragStart;
+        float cameraDistance, cameraDistanceDragStart;
     };
     UI ui;
 };
@@ -69,7 +73,7 @@ ProjectionMappingApp::ProjectionMappingApp ()
 void ProjectionMappingApp::prepareSettings( Settings *settings )
 {
     Vec2i size(min(1280, Display::getMainDisplay()->getWidth()),
-               min(960, Display::getMainDisplay()->getHeight()));
+               min(960, Display::getMainDisplay()->getHeight() - 40)); // allow room for chrome
     settings->setWindowSize(size.x, size.y);
     settings->setFrameRate(60.0f);
 }
@@ -140,14 +144,11 @@ void ProjectionMappingApp::setup()
 
 void ProjectionMappingApp::update()
 {
-    float camDist = ui.cameraDistance;
-    Quatf quat = ui.cameraRotation;
-    quat.w *= -1.0f; // reverse rotation
-    Vec3f camTarget = Vec3f::zero();
-    Vec3f camOffset = quat * Vec3f(0, 0, camDist);
-    Vec3f camEye    = camTarget + camOffset;
-    Vec3f camUp     = quat * Vec3f::yAxis();
-    camera.lookAt(camEye, camTarget, camUp);
+    Vec2f rotation = ui.cameraRotation * (M_PI / 180.f);
+    Vec3f cameraPosition = Vec3f(ui.cameraDistance * cos(rotation.x) * sin(rotation.y),
+                                 ui.cameraDistance * sin(rotation.x) * sin(rotation.y),
+                                 ui.cameraDistance * cos(rotation.y));
+    camera.lookAt(cameraPosition, Vec3f::zero(), Vec3f::yAxis());
 
     
     kinect.update();
@@ -169,13 +170,16 @@ void ProjectionMappingApp::update()
 
 void ProjectionMappingApp::draw()
 {
+    gl::clear( Color( 0, 0, 0 ) );
+    
+    ui.ui.draw();
+    
     gl::pushMatrices();
     gl::setMatrices(camera);
     {
         shader.bind();
         kinect.getColorTexture()->bind();
         {
-            gl::clear( Color( 0, 0, 0 ) );
             gl::color(1, 1, 1);
             glPointSize(1.f);
             gl::draw(vbo);
@@ -185,13 +189,12 @@ void ProjectionMappingApp::draw()
     }
     gl::popMatrices();
     
-    ui.ui.draw();
 }
 
 void ProjectionMappingApp::keyDown(KeyEvent ev)
 {
     if ( ev.getCode() == KeyEvent::KEY_SPACE ) {
-        ui.cameraRotation = Quatf();
+        ui.cameraRotation = Vec2f::zero();
         ui.cameraDistance = 100.f;
     }
 }
@@ -199,22 +202,16 @@ void ProjectionMappingApp::keyDown(KeyEvent ev)
 void ProjectionMappingApp::mouseDrag(MouseEvent ev)
 {
     if ( ev.isLeft() ) {
-        ui.cameraRotation.v = Vec3f((ev.getY() - ui.mouseDragStart.y) / getWindowHeight(),
-                                    (ev.getX() - ui.mouseDragStart.x) / getWindowWidth(),
-                                    0) + ui.cameraDragStart;
-        ui.cameraRotation.normalize();
+        ui.cameraRotation = ev.getPos().yx() - ui.cameraRotationDragStart;
     } else if ( ev.isRight() ) {
-        ui.cameraDistance = ev.getY() - ui.mouseDragStart.z + ui.cameraDistanceDragStart;
-//        cameraPosition.x = ev.getX() - mouseDragStart.x;
-//        cameraPosition.z = ev.getY() - mouseDragStart.z;
+        ui.cameraDistance = ev.getPos().y - ui.cameraDistanceDragStart;
     }
 }
 
 void ProjectionMappingApp::mouseDown(MouseEvent ev)
 {
-    ui.mouseDragStart = (Vec3f)ev.getPos().xyy();
-    ui.cameraDragStart = ui.cameraRotation.v;
-    ui.cameraDistanceDragStart = ui.cameraDistance;
+    ui.cameraRotationDragStart = ev.getPos().yx() - ui.cameraRotation;
+    ui.cameraDistanceDragStart = ev.getPos().y - ui.cameraDistance;
 }
 
 void ProjectionMappingApp::mouseUp(MouseEvent ev)
