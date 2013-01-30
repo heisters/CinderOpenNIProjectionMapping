@@ -115,7 +115,7 @@ void ProjectionMappingApp::setup()
     
     for ( int y = 0; y < kSize.y; ++y ) {
         for ( int x = 0; x < kSize.x; ++x ) {
-            indices.push_back(x + y * kSize.y);
+            indices.push_back(x + y * kSize.x);
             colors.push_back(Color(1, 1, 1));
             normals.push_back(Vec3f(0, 0, 1));
             texCoords.push_back(Vec2f((float)x / (float)kSize.x, (float)y / (float)kSize.y));
@@ -126,7 +126,6 @@ void ProjectionMappingApp::setup()
     vbo.bufferColorsRGB(colors);
     vbo.bufferNormals(normals);
     vbo.bufferTexCoords2d(0, texCoords);
-    
     
     try {
 		shader = gl::GlslProg(loadResource(RES_SHADER_VERT), loadResource(RES_SHADER_FRAG));
@@ -157,12 +156,12 @@ void ProjectionMappingApp::update()
         vector< Vec3f > positions;
         positions.reserve(kSize.x * kSize.y);
         
-        double start = getElapsedSeconds();
         XnPoint3D *pointCloud = kinect.getDepthMapRealWorld();
-        
-        start = getElapsedSeconds();
+
+        XnPoint3D *point;
+
         for ( gl::VboMesh::VertexIter it = vbo.mapVertexBuffer(); it.getIndex() < vbo.getNumIndices(); ++it ) {
-            XnPoint3D *point = pointCloud + it.getIndex();
+            point = pointCloud + it.getIndex();
             it.setPosition(point->X * 0.5f, point->Y * 0.5f, -(point->Z * 0.5));
         }
     }
