@@ -58,10 +58,20 @@ private:
             ui.hide();
         }
         
-        params::InterfaceGl ui;
+        void draw ()
+        {
+            // avoid drawing anything at all
+            if ( ui.isVisible() ) ui.draw();
+        }
+        
+        params::InterfaceGl & operator() () { return ui; }
+        
         
         ci::Vec2f cameraRotation, cameraRotationDragStart;
         float cameraDistance, cameraDistanceDragStart;
+        
+    private:
+        params::InterfaceGl ui;
     };
     UI ui;
 };
@@ -173,7 +183,7 @@ void ProjectionMappingApp::draw()
 {
     gl::clear( Color( 0, 0, 0 ) );
     
-    ui.ui.draw();
+    ui.draw();
     
     gl::pushMatrices();
     gl::setMatrices(camera);
@@ -198,13 +208,13 @@ void ProjectionMappingApp::keyDown(KeyEvent ev)
         ui.cameraRotation = Vec2f::zero();
         ui.cameraDistance = 100.f;
     } else if ( ev.getCode() == KeyEvent::KEY_BACKSLASH ) {
-        ui.ui.isVisible() ? ui.ui.hide() : ui.ui.show();
+        ui().isVisible() ? ui().hide() : ui().show();
     }
 }
 
 void ProjectionMappingApp::mouseDrag(MouseEvent ev)
 {
-    if ( ui.ui.isVisible() ) return;
+    if ( ui().isVisible() ) return;
     
     if ( ev.isLeft() ) {
         ui.cameraRotation = ev.getPos().xy() - ui.cameraRotationDragStart;
@@ -215,7 +225,7 @@ void ProjectionMappingApp::mouseDrag(MouseEvent ev)
 
 void ProjectionMappingApp::mouseDown(MouseEvent ev)
 {
-    if ( ui.ui.isVisible() ) return;
+    if ( ui().isVisible() ) return;
     
     ui.cameraRotationDragStart = ev.getPos().xy() - ui.cameraRotation;
     ui.cameraDistanceDragStart = ev.getPos().y - ui.cameraDistance;
