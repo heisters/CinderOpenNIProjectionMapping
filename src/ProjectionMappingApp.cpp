@@ -54,6 +54,8 @@ private:
             ui.addParam("camera rotation X", &cameraRotation.x);
             ui.addParam("camera rotation Y", &cameraRotation.y);
             ui.addParam("camera distance", &cameraDistance);
+            
+            ui.hide();
         }
         
         params::InterfaceGl ui;
@@ -144,9 +146,9 @@ void ProjectionMappingApp::setup()
 void ProjectionMappingApp::update()
 {
     Vec2f rotation = ui.cameraRotation * (M_PI / 180.f);
-    Vec3f cameraPosition = Vec3f(ui.cameraDistance * cos(rotation.x) * sin(rotation.y),
-                                 ui.cameraDistance * sin(rotation.x) * sin(rotation.y),
-                                 ui.cameraDistance * cos(rotation.y));
+    Vec3f cameraPosition = Vec3f(ui.cameraDistance * cos(rotation.y) * sin(rotation.x),
+                                 ui.cameraDistance * cos(rotation.x) * sin(rotation.y),
+                                 ui.cameraDistance * cos(rotation.x));
     camera.lookAt(cameraPosition, Vec3f::zero(), Vec3f::yAxis());
 
     
@@ -195,13 +197,17 @@ void ProjectionMappingApp::keyDown(KeyEvent ev)
     if ( ev.getCode() == KeyEvent::KEY_SPACE ) {
         ui.cameraRotation = Vec2f::zero();
         ui.cameraDistance = 100.f;
+    } else if ( ev.getCode() == KeyEvent::KEY_BACKSLASH ) {
+        ui.ui.isVisible() ? ui.ui.hide() : ui.ui.show();
     }
 }
 
 void ProjectionMappingApp::mouseDrag(MouseEvent ev)
 {
+    if ( ui.ui.isVisible() ) return;
+    
     if ( ev.isLeft() ) {
-        ui.cameraRotation = ev.getPos().yx() - ui.cameraRotationDragStart;
+        ui.cameraRotation = ev.getPos().xy() - ui.cameraRotationDragStart;
     } else if ( ev.isRight() ) {
         ui.cameraDistance = ev.getPos().y - ui.cameraDistanceDragStart;
     }
@@ -209,7 +215,9 @@ void ProjectionMappingApp::mouseDrag(MouseEvent ev)
 
 void ProjectionMappingApp::mouseDown(MouseEvent ev)
 {
-    ui.cameraRotationDragStart = ev.getPos().yx() - ui.cameraRotation;
+    if ( ui.ui.isVisible() ) return;
+    
+    ui.cameraRotationDragStart = ev.getPos().xy() - ui.cameraRotation;
     ui.cameraDistanceDragStart = ev.getPos().y - ui.cameraDistance;
 }
 
