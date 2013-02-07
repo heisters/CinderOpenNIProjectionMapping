@@ -46,8 +46,10 @@ public:
     
 private:
     void drawDebug();
+    void updateCalibration();
     
     void captureChessboardObservation();
+    void calibrateCamera();
     
     Kinect kinect;
     
@@ -74,6 +76,9 @@ private:
             ui.addParam("camera rotation X", &cameraRotation.x);
             ui.addParam("camera rotation Y", &cameraRotation.y);
             ui.addParam("camera distance", &cameraDistance);
+            ui.addParam("calibrate", &doCalibration);
+            ui.addParam("capture", &doCapture);
+            ui.addParam("run camera calibration", &doCalibrateCamera);
             
             ui.hide();
         }
@@ -89,7 +94,7 @@ private:
         
         ci::Vec2f cameraRotation, cameraRotationDragStart;
         float cameraDistance, cameraDistanceDragStart;
-        
+        bool doCalibration, doCapture, doCalibrateCamera;
     private:
         params::InterfaceGl ui;
     };
@@ -194,22 +199,87 @@ void ProjectionMappingApp::update()
 
         for ( gl::VboMesh::VertexIter it = vbo.mapVertexBuffer(); it.getIndex() < vbo.getNumIndices(); ++it ) {
             point = pointCloud + it.getIndex();
+            // TODO: remove this scale, adjust camera
             it.setPosition(point->X * 0.5f, point->Y * 0.5f, -(point->Z * 0.5));
         }
         
-        Surface8u surface = Surface8u(kinect.getColorImage());
-        cv::Mat currentFrame = toOcvRef(surface);
-        vector< cv::Point2f > corners;
-        corners.reserve(9 * 6);
-        cv::findChessboardCorners(currentFrame, cv::Size(9, 6), corners);
-        
-        cornerPoints.clear();
-        for (vector< cv::Point2f >::iterator it = corners.begin() ; it < corners.end(); it++ ) {
-            int index = kinect.getColorSize().x * (int)it->y + (int)it->x;
-            point = pointCloud + index;
-            cornerPoints.push_back(Vec3f(point->X * 0.5f, point->Y * 0.5f, -(point->Z * 0.5)));
-        }
+        updateCalibration();
     }
+}
+
+void ProjectionMappingApp::updateCalibration()
+{
+    cornerPoints.clear();
+    if ( !ui.doCalibration ) return;
+    
+    Surface8u surface = Surface8u(kinect.getColorImage());
+    cv::Mat currentFrame = toOcvRef(surface);
+    vector< cv::Point2f > corners;
+    corners.reserve(9 * 6);
+    cv::findChessboardCorners(currentFrame, cv::Size(9, 6), corners);
+    
+    XnPoint3D *pointCloud = kinect.getDepthMapRealWorld();
+    XnPoint3D *point;
+    for (vector< cv::Point2f >::iterator it = corners.begin() ; it < corners.end(); it++ ) {
+        int index = kinect.getColorSize().x * (int)it->y + (int)it->x;
+        point = pointCloud + index;
+        // TODO: remove this scale, adjust camera
+        cornerPoints.push_back(Vec3f(point->X * 0.5f, point->Y * 0.5f, -(point->Z * 0.5)));
+    }
+    
+    captureChessboardObservation();
+    calibrateCamera();
+}
+
+void ProjectionMappingApp::captureChessboardObservation() {
+    if ( !ui.doCalibration || !ui.doCapture ) return;
+    ui.doCapture = false;
+    
+    if ( cornerPoints.size() != 9 * 6 ) {
+        console() << "NO CAPTCHA!!" << endl;
+        return;
+    }
+    
+    console() << "YUMMY!" << endl;
+    
+    vector< cv::Point3f > observation;
+    vector< cv::Point2f > state;
+    int i = 0;
+    BOOST_FOREACH(Vec3f p1, cornerPoints)
+    {
+        observation.push_back(cv::Point3f(p1.x, p1.y, p1.z));
+        state.push_back(cv::Point2f(i % 9, i / 9));
+        i++;
+    }
+    chessboardObservations.push_back(observation);
+    chessboardStates.push_back(state);
+}
+
+void ProjectionMappingApp::calibrateCamera()
+{
+    if ( !ui.doCalibration || !ui.doCalibrateCamera ) return;
+    ui.doCalibrateCamera = false;
+    
+    cv::Mat cameraMatrix = cv::initCameraMatrix2D(chessboardObservations, chessboardStates, cv::Size(9, 6));
+    
+    cv::Mat distCoeffs;
+    vector< cv::Mat > rvecs, tvecs;
+    
+    cv::calibrateCamera(chessboardObservations, chessboardStates, cv::Size(9, 6), cameraMatrix, distCoeffs, rvecs, tvecs, CV_CALIB_USE_INTRINSIC_GUESS);
+    
+    console() << cameraMatrix << endl;
+    BOOST_FOREACH(cv::Mat v, rvecs)
+    {
+        console() << v << endl;
+    }
+    BOOST_FOREACH(cv::Mat v, tvecs)
+    {
+        console() << v << endl;
+    }
+    
+    
+    chessboardObservations.clear();
+    chessboardStates.clear();
 }
 
 void ProjectionMappingApp::draw()
@@ -254,27 +324,6 @@ void ProjectionMappingApp::drawDebug()
     }
 }
 
-void ProjectionMappingApp::captureChessboardObservation() {
-    if ( cornerPoints.size() != 9 * 6 ) {
-        console() << "NO CAPTCHA!!" << endl;
-        return;
-    }
-    
-    console() << "YUMMY!" << endl;
-    
-    vector< cv::Point3f > observation;
-    vector< cv::Point2f > state;
-    int i = 0;
-    BOOST_FOREACH(Vec3f p1, cornerPoints)
-    {
-        observation.push_back(cv::Point3f(p1.x, p1.y, p1.z));
-        state.push_back(cv::Point2f(i % 9, i / 9));
-        i++;
-    }
-    chessboardObservations.push_back(observation);
-    chessboardStates.push_back(state);
-}
-
 void ProjectionMappingApp::keyDown(KeyEvent ev)
 {
     if ( ev.getCode() == KeyEvent::KEY_SPACE ) {
@@ -282,29 +331,6 @@ void ProjectionMappingApp::keyDown(KeyEvent ev)
         ui.cameraDistance = 100.f;
     } else if ( ev.getCode() == KeyEvent::KEY_BACKSLASH ) {
         ui().isVisible() ? ui().hide() : ui().show();
-    } else if ( ev.getCode() == KeyEvent::KEY_RETURN ) {
-        captureChessboardObservation();
-    } else if ( ev.getCode() == KeyEvent::KEY_x ) {
-        cv::Mat cameraMatrix = cv::initCameraMatrix2D(chessboardObservations, chessboardStates, cv::Size(9, 6));
-        
-        cv::Mat distCoeffs;
-        vector< cv::Mat > rvecs, tvecs;
-        
-        cv::calibrateCamera(chessboardObservations, chessboardStates, cv::Size(9, 6), cameraMatrix, distCoeffs, rvecs, tvecs, CV_CALIB_USE_INTRINSIC_GUESS);
-
-        console() << cameraMatrix << endl;
-        BOOST_FOREACH(cv::Mat v, rvecs)
-        {
-            console() << v << endl;
-        }
-        BOOST_FOREACH(cv::Mat v, tvecs)
-        {
-            console() << v << endl;
-        }
-
-        
-        chessboardObservations.clear();
-        chessboardStates.clear();
     }
 }
 
