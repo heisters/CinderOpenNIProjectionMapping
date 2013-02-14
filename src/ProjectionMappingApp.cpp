@@ -3,7 +3,6 @@
  TODO:
  - separate window for projector
  - refactor
- - only run calibration on demand
  - record calibration observation when the grid is held still
  */
 
@@ -18,8 +17,6 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-
-#include <boost/foreach.hpp>
 
 #include "VKinect.h"
 #include "VFakeKinect.h"
@@ -220,8 +217,8 @@ void ProjectionMappingApp::updateCalibration()
     
     XnPoint3D *pointCloud = kinect.getDepthMapRealWorld();
     XnPoint3D *point;
-    for (vector< cv::Point2f >::iterator it = corners.begin() ; it < corners.end(); it++ ) {
-        int index = kinect.getColorSize().x * (int)it->y + (int)it->x;
+    for ( auto &p : corners ) {
+        int index = kinect.getColorSize().x * (int)p.y + (int)p.x;
         point = pointCloud + index;
         // TODO: remove this scale, adjust camera
         cornerPoints.push_back(Vec3f(point->X * 0.5f, point->Y * 0.5f, -(point->Z * 0.5)));
@@ -245,8 +242,7 @@ void ProjectionMappingApp::captureChessboardObservation() {
     vector< cv::Point3f > observation;
     vector< cv::Point2f > state;
     int i = 0;
-    BOOST_FOREACH(Vec3f p1, cornerPoints)
-    {
+    for(auto &p1 : cornerPoints) {
         observation.push_back(cv::Point3f(p1.x, p1.y, p1.z));
         state.push_back(cv::Point2f(i % 9, i / 9));
         i++;
@@ -268,12 +264,10 @@ void ProjectionMappingApp::calibrateCamera()
     cv::calibrateCamera(chessboardObservations, chessboardStates, cv::Size(9, 6), cameraMatrix, distCoeffs, rvecs, tvecs, CV_CALIB_USE_INTRINSIC_GUESS);
     
     console() << cameraMatrix << endl;
-    BOOST_FOREACH(cv::Mat v, rvecs)
-    {
+    for ( auto &v : rvecs ) {
         console() << v << endl;
     }
-    BOOST_FOREACH(cv::Mat v, tvecs)
-    {
+    for ( auto &v : tvecs ) {
         console() << v << endl;
     }
     
@@ -314,8 +308,7 @@ void ProjectionMappingApp::drawDebug()
         {
             drawCoordinateFrame(250.f, 3.f, 2.f);
             
-            BOOST_FOREACH(Vec3f p, cornerPoints)
-            {
+            for ( auto &p : cornerPoints ) {
                 gl::color(1, 0, 0);
                 gl::drawSphere(p, 2);
             }
